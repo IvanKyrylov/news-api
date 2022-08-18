@@ -1,0 +1,22 @@
+version: '3.8'
+services: 
+  news-api:
+    build: 
+      context: ./
+      dockerfile: Dockerfile
+    command: ./wait-for-postgres postgres
+    depends_on:     
+      - postgres
+    environment: 
+      - DB_PASSWORD=root
+    ports: 
+      - 8080:8080
+  postgres:
+    restart: always
+    image: postgres:latest
+    environment:
+      POSTGRES_PASSWORD: root
+    ports: 
+      - 5432:5432
+    volumes:
+      - ./migration/init_database.sql:/docker-entrypoint-initdb.d/1-init.sql
