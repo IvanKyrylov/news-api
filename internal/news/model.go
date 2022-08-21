@@ -6,9 +6,9 @@ import (
 )
 
 type News struct {
-	ID        string         `json:"id"`
-	Title     string         `json:"title"`
-	Content   sql.NullString `json:"content"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt sql.NullTime   `json:"updated_at"`
+	ID        string       `json:"id"`
+	Title     string       `json:"title"`
+	Content   string       `json:"content"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
 }
