@@ -26,7 +26,7 @@ or
 `curl --location --request GET 'http://localhost:9010/posts?limit={limit}&ptoken={lastID}'`
 
 Example
-`curl --location --request GET 'http://localhost:9010/posts`', curl --location --request GET '`http://localhost:9010/posts?limit=100`', curl --location --request GET '`http://localhost:9010/posts?limit=2&ptoken=8da1644b-6fa9-414d-b11f-252fd994f461`'.
+`curl --location --request GET 'http://localhost:9010/posts'`, `curl --location --request GET 'http://localhost:9010/posts?limit=100'`, `curl --location --request GET 'http://localhost:9010/posts?limit=2&ptoken=8da1644b-6fa9-414d-b11f-252fd994f461'`.
 
 POST /posts
 `curl --location --request POST 'http://localhost:9010/posts' --header 'Content-Type: application/json' --data-raw '[{"title":"{news_title}","content":"{news_content}"}]'`
@@ -47,10 +47,10 @@ Example
 `curl --location --request PUT 'http://localhost:9010/posts/db20f5fd-7ca4-4fde-b3d3-c7a2580a2eea' --header 'Content-Type: application/json' --data-raw '{"title":"666","content":"666"}'`
 
 DELETE /posts/{uuid}
-curl --location --request DELETE 'http://localhost:9010/posts/{uuid}' 
+`curl --location --request DELETE 'http://localhost:9010/posts/{uuid}'`
 
 Example
-http://localhost:9010/posts/db20f5fd-7ca4-4fde-b3d3-c7a2580a2eea
+`curl --location --request DELETE 'http://localhost:9010/posts/db20f5fd-7ca4-4fde-b3d3-c7a2580a2eea'`
 
 
 ## Development
