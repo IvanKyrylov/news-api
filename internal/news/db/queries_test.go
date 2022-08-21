@@ -8,31 +8,6 @@ import (
 
 func Test_insertNewsQuery(t *testing.T) {
 	type args struct {
-		news news.News
-	}
-	tests := []struct {
-		name string
-		args args
-		want string
-	}{
-		{name: "1",
-			args: args{
-				news.News{Title: "1", Content: "1"},
-			},
-			want: `INSERT INTO posts (title, content) VALUE ('1','1')`,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := insertNewsQuery(tt.args.news); got != tt.want {
-				t.Errorf("insertNewsQuery() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_bulkInsertNewsQuery(t *testing.T) {
-	type args struct {
 		param []news.News
 	}
 	tests := []struct {
@@ -44,18 +19,18 @@ func Test_bulkInsertNewsQuery(t *testing.T) {
 			args: args{
 				[]news.News{{Title: "1", Content: "1"}, {Title: "2", Content: "2"}, {Title: "3", Content: "3"}},
 			},
-			want: `INSERT INTO posts (title, content) VALUE ('1','1'),('2','2'),('3','3')`,
+			want: `INSERT INTO news (title, content) VALUES ('1','1'),('2','2'),('3','3') RETURNING id`,
 		},
 		{name: "2",
 			args: args{
 				[]news.News{{Title: "1", Content: ""}, {Title: "2", Content: ""}, {Title: "3", Content: ""}},
 			},
-			want: `INSERT INTO posts (title, content) VALUE ('1',''),('2',''),('3','')`,
+			want: `INSERT INTO news (title, content) VALUES ('1',''),('2',''),('3','') RETURNING id`,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := bulkInsertNewsQuery(tt.args.param); got != tt.want {
+			if got := insertNewsQuery(tt.args.param...); got != tt.want {
 				t.Errorf("insertNewsQuery() = %v, want %v", got, tt.want)
 			}
 		})
@@ -76,7 +51,7 @@ func Test_selectNewsByIDQuery(t *testing.T) {
 			args: args{
 				id: "test",
 			},
-			want: "SELECT id, title, content, created_at, updated_at FROM posts WHERE id = 'test'",
+			want: "SELECT id, title, content, created_at, updated_at FROM news WHERE id = 'test'",
 		},
 	}
 	for _, tt := range tests {
@@ -104,7 +79,7 @@ func Test_selectAllNewsQueryWithPagination(t *testing.T) {
 				limit:  100,
 				lastID: "lastID",
 			},
-			want: `SELECT id, title, content, created_at, updated_at FROM posts WHERE id < 'lastID' ORDER BY id DESC LIMIT 100`,
+			want: `SELECT id, title, content, created_at, updated_at FROM news WHERE id < 'lastID' ORDER BY id DESC LIMIT 100`,
 		},
 		{
 			name: "2",
@@ -112,7 +87,7 @@ func Test_selectAllNewsQueryWithPagination(t *testing.T) {
 				limit:  0,
 				lastID: "lastID",
 			},
-			want: `SELECT id, title, content, created_at, updated_at FROM posts WHERE id < 'lastID' ORDER BY id DESC`,
+			want: `SELECT id, title, content, created_at, updated_at FROM news WHERE id < 'lastID' ORDER BY id DESC`,
 		},
 		{
 			name: "4",
@@ -120,7 +95,7 @@ func Test_selectAllNewsQueryWithPagination(t *testing.T) {
 				limit:  100,
 				lastID: "",
 			},
-			want: `SELECT id, title, content, created_at, updated_at FROM posts ORDER BY id DESC LIMIT 100`,
+			want: `SELECT id, title, content, created_at, updated_at FROM news ORDER BY id DESC LIMIT 100`,
 		},
 	}
 	for _, tt := range tests {
@@ -146,7 +121,7 @@ func Test_selectNewsByIDForUpdateQuery(t *testing.T) {
 			args: args{
 				id: "test",
 			},
-			want: "SELECT created_at FROM posts WHERE id = 'test' FOR UPDATE",
+			want: "SELECT created_at FROM news WHERE id = 'test' FOR UPDATE",
 		},
 	}
 	for _, tt := range tests {
@@ -175,7 +150,7 @@ func Test_updateNewsByID(t *testing.T) {
 					Content: "test content",
 				},
 			},
-			want: "UPDATE posts SET title = 'test title', content = 'test content', updated_at = now() AT TIME ZONE 'utc' WHERE id = 'test'",
+			want: "UPDATE news SET title = 'test title', content = 'test content', updated_at = now() AT TIME ZONE 'utc' WHERE id = 'test'",
 		},
 	}
 	for _, tt := range tests {
@@ -201,7 +176,7 @@ func Test_deleteNewsByID(t *testing.T) {
 			args: args{
 				id: "test",
 			},
-			want: "DELETE FROM posts WHERE id = 'test'",
+			want: "DELETE FROM news WHERE id = 'test'",
 		},
 	}
 

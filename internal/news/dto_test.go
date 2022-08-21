@@ -1,6 +1,8 @@
 package news
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestNewsDTO_IsEmpty(t *testing.T) {
 	tests := []struct {
@@ -38,6 +40,24 @@ func TestNewsDTO_IsEmpty(t *testing.T) {
 			if got := tt.n.IsEmpty(); got != tt.want {
 				t.Errorf("NewsDTO.IsEmpty() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestNewsDTO_Map(t *testing.T) {
+	type args struct {
+		n *News
+	}
+	tests := []struct {
+		name string
+		dto  *NewsDTO
+		args args
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.dto.Map(tt.args.n)
 		})
 	}
 }

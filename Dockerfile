@@ -7,6 +7,5 @@ RUN go build -mod=readonly -o app cmd/news-api/main.go
 FROM alpine:3.16
 COPY --from=builder /usr/local/go/src/app /
 COPY --from=builder /usr/local/go/src/config.yml /
-COPY --from=builder /usr/local/go/src/scripts/wait-for-postgres.sh /
 
 CMD ["/app"]

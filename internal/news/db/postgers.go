@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/IvanKyrylov/news-api/internal/news"
 	"github.com/IvanKyrylov/news-api/pkg/postgres"
@@ -44,7 +45,7 @@ func (s *repository) CreateMany(ctx context.Context, n []news.News) ([]string, e
 		return nil, errors.New("length news equal zero (0)")
 	}
 
-	rows, err := s.db.QueryContext(ctx, bulkInsertNewsQuery(n))
+	rows, err := s.db.QueryContext(ctx, insertNewsQuery(n...))
 	if err != nil {
 		return nil, fmt.Errorf("failed exec query w error %w", err)
 	}
@@ -110,7 +111,8 @@ func (s *repository) Update(ctx context.Context, n news.News) error {
 		return fmt.Errorf("failed start transaction w error %w", err)
 	}
 
-	err = s.db.QueryRowContext(ctx, selectNewsByIDForUpdateQuery(n.ID)).Scan(nil)
+	var createdAt time.Time
+	err = s.db.QueryRowContext(ctx, selectNewsByIDForUpdateQuery(n.ID)).Scan(&createdAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			tx.Rollback()

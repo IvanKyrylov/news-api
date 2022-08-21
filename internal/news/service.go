@@ -5,12 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"regexp"
 )
 
 type Service interface {
 	CreateNews(ctx context.Context, news []NewsDTO) ([]string, error)
-	GetNewsByID(ctx context.Context, id string) (News, error)
-	GetAllNewsWithPagination(ctx context.Context, limit uint64, lastID string) ([]News, error)
+	GetNewsByID(ctx context.Context, id string) (NewsDTO, error)
+	GetAllNewsWithPagination(ctx context.Context, limit uint64, pToken string) ([]NewsDTO, error)
 	UpdateNews(ctx context.Context, id string, news NewsDTO) error
 	DeleteNews(ctx context.Context, id string) error
 }
@@ -31,7 +32,7 @@ func NewService(repository Repository, logger *log.Logger) Service {
 
 func (s *service) CreateNews(ctx context.Context, news []NewsDTO) ([]string, error) {
 	if len(news) == 0 {
-		return []string{}, ErrDataNotValid{Param: "news", Message: "length news is zero (0)"}
+		return nil, ErrDataNotValid{Param: "news", Message: "length news is zero (0)"}
 	}
 
 	param := make([]News, 0)
@@ -42,6 +43,10 @@ func (s *service) CreateNews(ctx context.Context, news []NewsDTO) ([]string, err
 				Content: news[i].Content,
 			})
 		}
+	}
+
+	if len(param) == 0 {
+		return nil, ErrDataNotValid{Param: "news", Message: "news is not valid"}
 	}
 
 	ids, err := s.repository.CreateMany(ctx, param)
@@ -56,25 +61,34 @@ func (s *service) CreateNews(ctx context.Context, news []NewsDTO) ([]string, err
 	return ids, nil
 }
 
-func (s *service) GetNewsByID(ctx context.Context, id string) (News, error) {
-	if id == "" {
-		return News{}, ErrDataNotValid{Param: "id", Message: "id is empty"}
+func (s *service) GetNewsByID(ctx context.Context, id string) (NewsDTO, error) {
+	if !isValidID(id) {
+		return NewsDTO{}, ErrDataNotValid{Param: "id", Message: "id is not valid"}
 	}
 
 	news, err := s.repository.GetByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
-			return News{}, err
+			return NewsDTO{}, err
 		}
 
-		return News{}, fmt.Errorf("couldn't get news w error %w", err)
+		return NewsDTO{}, fmt.Errorf("couldn't get news w error %w", err)
 	}
 
-	return news, nil
+	var result NewsDTO
+	result.Map(&news)
+
+	return result, nil
 }
 
-func (s *service) GetAllNewsWithPagination(ctx context.Context, limit uint64, lastID string) ([]News, error) {
-	news, err := s.repository.GetAllWithPagination(ctx, limit, lastID)
+func (s *service) GetAllNewsWithPagination(ctx context.Context, limit uint64, pToken string) ([]NewsDTO, error) {
+	if pToken != "" {
+		if !isValidID(pToken) {
+			return nil, ErrDataNotValid{Param: "id", Message: "pToken is not valid"}
+		}
+	}
+
+	news, err := s.repository.GetAllWithPagination(ctx, limit, pToken)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get all news w error %w", err)
 	}
@@ -83,11 +97,22 @@ func (s *service) GetAllNewsWithPagination(ctx context.Context, limit uint64, la
 		return nil, ErrNotFound
 	}
 
-	return news, nil
+	result := make([]NewsDTO, 0)
+	for i := 0; i < len(news); i++ {
+		var dto NewsDTO
+		dto.Map(&news[i])
+		result = append(result, dto)
+	}
+
+	return result, nil
 }
 
 func (s *service) UpdateNews(ctx context.Context, id string, n NewsDTO) error {
-	if !n.IsEmpty() && id == "" {
+	if !isValidID(id) {
+		return ErrDataNotValid{Param: "id", Message: "id is not valid"}
+	}
+
+	if !n.IsEmpty() {
 		return ErrDataNotValid{Param: "news", Message: "field news is empty"}
 	}
 
@@ -108,8 +133,8 @@ func (s *service) UpdateNews(ctx context.Context, id string, n NewsDTO) error {
 }
 
 func (s *service) DeleteNews(ctx context.Context, id string) error {
-	if id == "" {
-		return ErrDataNotValid{Param: "id", Message: "id is empty"}
+	if !isValidID(id) {
+		return ErrDataNotValid{Param: "id", Message: "id is not valid"}
 	}
 
 	err := s.repository.DeleteByID(ctx, id)
@@ -121,4 +146,9 @@ func (s *service) DeleteNews(ctx context.Context, id string) error {
 	}
 
 	return nil
+}
+
+func isValidID(id string) bool {
+	r := regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$")
+	return r.MatchString(id)
 }

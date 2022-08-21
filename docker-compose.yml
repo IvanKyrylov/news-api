@@ -1,22 +1,35 @@
 version: '3.8'
 services: 
   news-api:
+    restart:
+      always
     build: 
       context: ./
       dockerfile: Dockerfile
-    command: ./wait-for-postgres postgres
     depends_on:     
       - postgres
-    environment: 
-      - DB_PASSWORD=root
+      - migrate
+    links: 
+      - postgres 
     ports: 
-      - 8080:8080
+      - 9010:9010
+
+  migrate:
+    image: migrate/migrate
+    depends_on:     
+      - postgres
+    volumes:
+      - ./migrations:/migrations
+    command: ["-path", "/migrations", "-database",  "postgres://pord:root@postgres:5432/news_api?sslmode=disable", "up"]
+    links: 
+      - postgres        
+
   postgres:
     restart: always
-    image: postgres:latest
+    image: postgres:14.5-alpine
     environment:
       POSTGRES_PASSWORD: root
     ports: 
       - 5432:5432
     volumes:
-      - ./migration/init_database.sql:/docker-entrypoint-initdb.d/1-init.sql
+      - ./scripts/init_database.sql:/docker-entrypoint-initdb.d/1-init.sql
