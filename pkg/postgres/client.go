@@ -14,9 +14,11 @@ type Client interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	PingContext(ctx context.Context) error
+	Close() error
 }
 
-func NewClient(ctx context.Context, host, port, user, password, dbname, sslmode string) (client *sql.DB, err error) {
+func NewClient(ctx context.Context, host, port, user, password, dbname, sslmode string) (client Client, err error) {
 	connect := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s", host, port, user, password, dbname, sslmode)
 
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)

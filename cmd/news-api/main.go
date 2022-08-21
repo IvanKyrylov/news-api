@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -37,11 +36,13 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	newsStorage := db.NewStorage(client, logger)
+	newsRepository := db.NewRepository(client, logger)
+
+	newService := news.NewService(newsRepository, logger)
 
 	userHandler := news.Handler{
 		Logger:      logger,
-		NewsService: newsStorage,
+		NewsService: newService,
 	}
 
 	userHandler.Register(router)
@@ -50,7 +51,7 @@ func main() {
 	start(router, logger, cfg, client)
 }
 
-func start(router http.Handler, logger *log.Logger, cfg *config.Config, client *sql.DB) {
+func start(router http.Handler, logger *log.Logger, cfg *config.Config, client postgres.Client) {
 	var server *http.Server
 	var listener net.Listener
 

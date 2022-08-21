@@ -25,54 +25,38 @@ func NewRepository(db postgres.Client, logger *log.Logger) news.Repository {
 	}
 }
 
-func (s *repository) CreateOne(ctx context.Context, n news.News) error {
-	if n == (news.News{}) {
-		return errors.New("length news equal zero (0)")
+func (s *repository) CreateOne(ctx context.Context, n news.News) (string, error) {
+	if err := validation(n); err != nil {
+		return "", fmt.Errorf("failed validation w error %w", err)
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
+	var id string
+	err := s.db.QueryRowContext(ctx, insertNewsQuery(n)).Scan(&id)
 	if err != nil {
-		return fmt.Errorf("failed start transaction w error %w", err)
+		return "", fmt.Errorf("failed exec query w error %w", err)
 	}
 
-	_, err = tx.ExecContext(ctx, insertNewsQuery(n))
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("failed exec query w error %w", err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("failed commit transaction w error %w", err)
-	}
-
-	return nil
+	return id, nil
 }
 
-func (s *repository) CreateMany(ctx context.Context, news []news.News) error {
-	if len(news) == 0 {
-		return errors.New("length news equal zero (0)")
+func (s *repository) CreateMany(ctx context.Context, n []news.News) ([]string, error) {
+	if len(n) == 0 {
+		return nil, errors.New("length news equal zero (0)")
 	}
 
-	tx, err := s.db.BeginTx(ctx, nil)
+	rows, err := s.db.QueryContext(ctx, bulkInsertNewsQuery(n))
 	if err != nil {
-		return fmt.Errorf("failed start transaction w error %w", err)
+		return nil, fmt.Errorf("failed exec query w error %w", err)
 	}
 
-	_, err = tx.ExecContext(ctx, bulkInsertNewsQuery(news))
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("failed exec query w error %w", err)
+	ids := make([]string, 0)
+	for rows.Next() {
+		var id string
+		rows.Scan(&id)
+		ids = append(ids, id)
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("failed commit transaction w error %w", err)
-	}
-
-	return nil
+	return ids, nil
 }
 
 func (s *repository) GetByID(ctx context.Context, id string) (news.News, error) {
@@ -95,10 +79,6 @@ func (s *repository) GetByID(ctx context.Context, id string) (news.News, error) 
 }
 
 func (s *repository) GetAllWithPagination(ctx context.Context, limit uint64, lastID string) ([]news.News, error) {
-	if limit == 0 {
-		return nil, errors.New("limit equal zero (0)")
-	}
-
 	rows, err := s.db.QueryContext(ctx, selectAllNewsQueryWithPagination(limit, lastID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to query w error %w", err)
@@ -121,6 +101,10 @@ func (s *repository) GetAllWithPagination(ctx context.Context, limit uint64, las
 }
 
 func (s *repository) Update(ctx context.Context, n news.News) error {
+	if err := validation(n); err != nil {
+		return fmt.Errorf("failed validation w error %w", err)
+	}
+
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("failed start transaction w error %w", err)
@@ -152,8 +136,12 @@ func (s *repository) Update(ctx context.Context, n news.News) error {
 	return nil
 }
 
-func (s *repository) Delete(ctx context.Context, n news.News) error {
-	rows, err := s.db.ExecContext(ctx, deleteNewsByID(n.ID))
+func (s *repository) DeleteByID(ctx context.Context, id string) error {
+	if id == "" {
+		return errors.New("id is empty")
+	}
+
+	rows, err := s.db.ExecContext(ctx, deleteNewsByID(id))
 	if err != nil {
 		return fmt.Errorf("failed exec query w error %w", err)
 	}
@@ -167,5 +155,15 @@ func (s *repository) Delete(ctx context.Context, n news.News) error {
 		return news.ErrNotFound
 	}
 
+	return nil
+}
+
+func validation(n news.News) error {
+	switch {
+	case n.Title == "":
+		return errors.New("title is empty")
+	case n.Content == "":
+		return errors.New("content is empty")
+	}
 	return nil
 }
