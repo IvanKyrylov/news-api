@@ -16,7 +16,7 @@ Run HTTP server and database with single command:
 docker-compose up -d
 ```
 
-Server will be accessible via port **8080** by default.
+Server will be accessible via port **9010** by default.
 
 ## Development
 
