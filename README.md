@@ -7,6 +7,12 @@ A microservice to store and retrieve news posts.
 There are HTTP server written in Go and PostgreSQL storage.
 
 ## Getting Started
+git@github.com:IvanKyrylov/news-api.git
+git@github.com:IvanKyrylov/news-api.git
+git@github.com:IvanKyrylov/news-api.git
+git@github.com:IvanKyrylov/news-api.git
+git@github.com:IvanKyrylov/news-api.gitgit@github.com:IvanKyrylov/news-api.git
+git@github.com:IvanKyrylov/news-api.git
 
 > Only `docker` and `docker-compose` are needed.
 
